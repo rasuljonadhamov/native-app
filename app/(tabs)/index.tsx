@@ -40,19 +40,30 @@ export default function HomeScreen() {
   const mapRef = useRef(null);
   const mapContainerRef = useRef(null);
 
+  const defaultLocation = [-73.968285, 40.785091];
+
   useEffect(() => {
     (async () => {
       setIsLoading(true);
       try {
         let { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== "granted") {
-          setError("Permission to access location was denied");
+          // Use default location when permission is denied
+          setCurrentLocation(defaultLocation);
+          setError(
+            "Permission to access location was denied. Using default location."
+          );
+
+          if (Platform.OS === "web") {
+            initWebMap(defaultLocation); // Initialize map with default location
+          }
           return;
         }
 
         let location = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.High,
+          accuracy: Location.Accuracy.BestForNavigation,
         });
+
         setCurrentLocation([
           location.coords.longitude,
           location.coords.latitude,
@@ -62,13 +73,45 @@ export default function HomeScreen() {
           initWebMap([location.coords.longitude, location.coords.latitude]);
         }
       } catch (err) {
-        setError("Error getting current location");
+        // Use default location in case of error
+        setCurrentLocation(defaultLocation);
+        setError("Error getting current location. Using default location.");
         console.error(err);
       } finally {
         setIsLoading(false);
       }
     })();
   }, []);
+
+  // useEffect(() => {
+  //   (async () => {
+  //     setIsLoading(true);
+  //     try {
+  //       let { status } = await Location.requestForegroundPermissionsAsync();
+  //       if (status !== "granted") {
+  //         setError("Permission to access location was denied");
+  //         return;
+  //       }
+
+  //       let location = await Location.getCurrentPositionAsync({
+  //         accuracy: Location.Accuracy.High,
+  //       });
+  //       setCurrentLocation([
+  //         location.coords.longitude,
+  //         location.coords.latitude,
+  //       ]);
+
+  //       if (Platform.OS === "web") {
+  //         initWebMap([location.coords.longitude, location.coords.latitude]);
+  //       }
+  //     } catch (err) {
+  //       setError("Error getting current location");
+  //       console.error(err);
+  //     } finally {
+  //       setIsLoading(false);
+  //     }
+  //   })();
+  // }, []);
 
   const initWebMap = (center) => {
     if (!mapRef.current) {
@@ -90,7 +133,7 @@ export default function HomeScreen() {
     setError(null);
     try {
       if (!currentLocation) {
-        throw new Error("Current location not available");
+        throw new Error("Joylashuvingiz mavjud emas...");
       }
 
       const geocodeResponse = await fetch(
@@ -266,11 +309,11 @@ export default function HomeScreen() {
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.input}
-          placeholder="Enter your destination"
+          placeholder="Manzilni kiriting..."
           onChangeText={(text) => setDestination(text)}
           value={destination}
         />
-        <Button title="Let's go!" onPress={getRoute} disabled={isLoading} />
+        <Button title="Ketdik" onPress={getRoute} disabled={isLoading} />
       </View>
 
       {route && (
